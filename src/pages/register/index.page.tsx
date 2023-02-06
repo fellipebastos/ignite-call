@@ -1,5 +1,7 @@
+import { api } from '@/lib/axios'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button, Heading, MultiStep, Text, TextInput } from '@ignite-ui/react'
+import { AxiosError } from 'axios'
 import { useRouter } from 'next/router'
 import { ArrowRight } from 'phosphor-react'
 import { useEffect } from 'react'
@@ -35,7 +37,19 @@ export default function Register() {
   })
 
   async function handleRegister(data: RegisterFormData) {
-    console.log(data)
+    try {
+      await api.post('/users', {
+        name: data.name,
+        username: data.username,
+      })
+    } catch (error) {
+      if (error instanceof AxiosError && error?.response?.data?.error) {
+        alert(error.response.data.error)
+        return
+      }
+
+      console.log(error)
+    }
   }
 
   useEffect(() => {
