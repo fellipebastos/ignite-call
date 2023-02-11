@@ -1,7 +1,7 @@
 import { getWeekDays } from '@/utils/get-week-days'
 import dayjs from 'dayjs'
 import { CaretLeft, CaretRight } from 'phosphor-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   CalendarActions,
   CalendarBody,
@@ -23,10 +23,19 @@ type CalendarWeeks = CalendarWeek[]
 
 interface CalendarProps {
   selectedDate: Date | null
-  onDateSelected: (date: Date) => void
+  unavailableDays?: number[]
+  unavailableWeekDays?: number[]
+  onDaySelected: (date: Date) => void
+  onDateChange: (date: Date) => void
 }
 
-export function Calendar({ selectedDate, onDateSelected }: CalendarProps) {
+export function Calendar({
+  selectedDate,
+  unavailableDays = [],
+  unavailableWeekDays = [],
+  onDaySelected,
+  onDateChange,
+}: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(() => dayjs().set('date', 1))
 
   function handlePreviousMonth() {
@@ -36,6 +45,10 @@ export function Calendar({ selectedDate, onDateSelected }: CalendarProps) {
   function handleNextMonth() {
     setCurrentDate((date) => date.add(1, 'month'))
   }
+
+  useEffect(() => {
+    onDateChange(currentDate.toDate())
+  }, [currentDate, onDateChange])
 
   const calendarWeeks = useMemo(() => {
     const daysInMonthArray = Array.from({
@@ -64,7 +77,10 @@ export function Calendar({ selectedDate, onDateSelected }: CalendarProps) {
       ...previousMonthFillArray.map((date) => ({ date, disabled: true })),
       ...daysInMonthArray.map((date) => ({
         date,
-        disabled: date.endOf('day').isBefore(new Date()),
+        disabled:
+          date.endOf('day').isBefore(new Date()) ||
+          unavailableWeekDays.includes(date.get('day')) ||
+          unavailableDays.includes(date.get('date')),
       })),
       ...nextMonthFillArray.map((date) => ({ date, disabled: true })),
     ]
@@ -86,7 +102,7 @@ export function Calendar({ selectedDate, onDateSelected }: CalendarProps) {
     )
 
     return calendarWeeks
-  }, [currentDate])
+  }, [currentDate, unavailableWeekDays, unavailableDays])
 
   const currentMonth = currentDate.format('MMMM')
   const currentYear = currentDate.format('YYYY')
@@ -125,7 +141,7 @@ export function Calendar({ selectedDate, onDateSelected }: CalendarProps) {
                 <td key={date.toString()}>
                   <CalendarDay
                     disabled={disabled}
-                    onClick={() => onDateSelected(date.toDate())}
+                    onClick={() => onDaySelected(date.toDate())}
                   >
                     {date.get('date')}
                   </CalendarDay>
